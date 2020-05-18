@@ -1,6 +1,5 @@
 package com.smc.util;
 
-import com.sun.istack.internal.logging.Logger;
 import org.apache.poi.hssf.usermodel.HSSFCell;
 import org.apache.poi.hssf.usermodel.HSSFDateUtil;
 import org.apache.poi.ss.usermodel.Cell;
@@ -14,7 +13,6 @@ import java.util.Date;
 
 public class ExcelUtil {
 
-    private static final Logger logger = Logger.getLogger(ExcelUtil.class);
     public static final String OFFICE_EXCEL_2003_SUFFIX = "xls";
     public static final String OFFICE_EXCEL_2010_SUFFIX = "xlsx";
     public static final String EMPTY = "";

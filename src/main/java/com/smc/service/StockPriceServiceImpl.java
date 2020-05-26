@@ -95,7 +95,7 @@ public class StockPriceServiceImpl implements StockPriceService {
 
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public String importPrice(MultipartFile file) throws Exception {
+    public int importPrice(MultipartFile file) throws Exception {
         List<ArrayList<String>> priceList;
         try {
             priceList = new ReadExcelUtil().readExcel(file);
@@ -103,8 +103,7 @@ public class StockPriceServiceImpl implements StockPriceService {
             throw e;
         }
         List<StockPrice> stockPriceList = parsePrice(priceList);
-        int count = stockPriceRepo.saveAll(stockPriceList).size();
-        return count + " records were imported successfully.";
+        return stockPriceRepo.saveAll(stockPriceList).size();
     }
 
     private Date plusOneDay(Date fromDate) {
@@ -134,14 +133,33 @@ public class StockPriceServiceImpl implements StockPriceService {
         String stockCode = cse.getStockCode();
         List<StockPrice> stockPriceList = stockPriceRepo.getMissingData(stockExchangeId, stockCode, from, to);
         List<Date> datesWithMissingData = new ArrayList<>();
-        StockPrice price = stockPriceList.get(0);
-        Date previousDate = price.getDate();
-        while (previousDate.after(from)) {
+        if (stockPriceList.isEmpty()) {
+            while (from.before(to)) {
+                datesWithMissingData.add(from);
+                from = plusOneDay(from);
+            }
             datesWithMissingData.add(from);
-            from = plusOneDay(from);
-        }
-        for (int i = 1; i < stockPriceList.size() - 1; i++) {
-            price = stockPriceList.get(i);
+        } else {
+            StockPrice price = stockPriceList.get(0);
+            Date previousDate = price.getDate();
+            while (previousDate.after(from)) {
+                datesWithMissingData.add(from);
+                from = plusOneDay(from);
+            }
+            for (int i = 1; i < stockPriceList.size() - 1; i++) {
+                price = stockPriceList.get(i);
+                Date currentDate = price.getDate();
+                if (!minusOneDay(currentDate).equals(previousDate)) {
+                    while (currentDate.after(previousDate)) {
+                        previousDate = plusOneDay(previousDate);
+                        if (!previousDate.equals(currentDate)) {
+                            datesWithMissingData.add(previousDate);
+                        }
+                    }
+                }
+                previousDate = currentDate;
+            }
+            price = stockPriceList.get(stockPriceList.size() - 1);
             Date currentDate = price.getDate();
             if (!minusOneDay(currentDate).equals(previousDate)) {
                 while (currentDate.after(previousDate)) {
@@ -151,21 +169,10 @@ public class StockPriceServiceImpl implements StockPriceService {
                     }
                 }
             }
-            previousDate = currentDate;
-        }
-        price = stockPriceList.get(stockPriceList.size() - 1);
-        Date currentDate = price.getDate();
-        if (!minusOneDay(currentDate).equals(previousDate)) {
-            while (currentDate.after(previousDate)) {
-                previousDate = plusOneDay(previousDate);
-                if (!previousDate.equals(currentDate)) {
-                    datesWithMissingData.add(previousDate);
-                }
+            while (currentDate.before(to)) {
+                currentDate = plusOneDay(currentDate);
+                datesWithMissingData.add(currentDate);
             }
-        }
-        while (currentDate.before(to)) {
-            currentDate = plusOneDay(currentDate);
-            datesWithMissingData.add(currentDate);
         }
 
         return datesWithMissingData;

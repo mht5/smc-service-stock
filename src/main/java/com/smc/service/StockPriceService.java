@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface StockPriceService {
 
-    String importPrice(MultipartFile file) throws Exception;
+    int importPrice(MultipartFile file) throws Exception;
 
     List<Date> getMissingData(int companyId, String fromDate, String toDate) throws Exception;
 

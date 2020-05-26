@@ -25,7 +25,7 @@ public class StockPriceController {
     private StockPriceService stockPriceService;
 
     @PostMapping("/import-price")
-    public String importPrice(@RequestParam("file") MultipartFile file) throws Exception {
+    public int importPrice(@RequestParam("file") MultipartFile file) throws Exception {
         return stockPriceService.importPrice(file);
     }
 
